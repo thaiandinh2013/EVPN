@@ -1,0 +1,39 @@
+version: '2'
+volumes:
+  postgres11-postgis2.5:
+services:
+  s3:
+    image: minio/minio
+    ports:
+      - "9000:9000"
+    volumes:
+      - ./storage/minio:/data
+    environment:
+      MINIO_ACCESS_KEY: minio_access_key
+      MINIO_SECRET_KEY: minio_secret_key
+    command: server --address 0.0.0.0:9000 /data
+
+  postgres:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: postgres11-postgis2.5
+    container_name: postgres11-postgis2.5
+    volumes:
+      - postgres11-postgis2.5:/var/lib/postgresql/data
+      - ./backups:/opt/backups
+    networks:
+      - postgres_conn
+    ports:
+      - '5432:5432'
+    env_file: .env
+
+  process_python:
+    build:
+      context: .
+      dockerfile: ./python_process/Dockerfile
+
+
+networks:
+  postgres_conn:
+    driver: bridge
